@@ -60,7 +60,7 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
     }
 
     printf(
-        "Superblock: (%ld)\n"
+        "Superblock size: (%ld)\n"
         "\tmagic=%#x\n"
         "\tnr_blocks=%u\n"
         "\tnr_inodes=%u (istore=%u blocks)\n"
@@ -72,7 +72,7 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
         sb->info.nr_inodes, sb->info.nr_istore_blocks, sb->info.nr_ifree_blocks,
         sb->info.nr_bfree_blocks, sb->info.nr_free_inodes,
         sb->info.nr_free_blocks);
-
+    printf("sb->ifree_bitmap = %d", *sb->info.ifree_bitmap);
     return sb;
 }
 
@@ -249,8 +249,11 @@ int main(int argc, char **argv)
     }
 
     /* Get block device size */
+    // 识别到是块设备
     if ((stat_buf.st_mode & S_IFMT) == S_IFBLK) {
+        printf("block device detected!\n")
         long int blk_size = 0;
+        // 块设备的尺寸获取
         ret = ioctl(fd, BLKGETSIZE64, &blk_size);
         if (ret != 0) {
             perror("BLKGETSIZE64:");
