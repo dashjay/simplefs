@@ -72,7 +72,6 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
         sb->info.nr_inodes, sb->info.nr_istore_blocks, sb->info.nr_ifree_blocks,
         sb->info.nr_bfree_blocks, sb->info.nr_free_inodes,
         sb->info.nr_free_blocks);
-    printf("sb->ifree_bitmap = %d", *sb->info.ifree_bitmap);
     return sb;
 }
 
