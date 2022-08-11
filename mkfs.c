@@ -99,6 +99,7 @@ static int write_inode_store(int fd, struct superblock *sb)
     inode->i_nlink = htole32(2);
     inode->ei_block = htole32(first_data_block);
 
+    // write first block (after super block)
     int ret = write(fd, block, SIMPLEFS_BLOCK_SIZE);
     if (ret != SIMPLEFS_BLOCK_SIZE) {
         ret = -1;
@@ -250,7 +251,7 @@ int main(int argc, char **argv)
     /* Get block device size */
     // 识别到是块设备
     if ((stat_buf.st_mode & S_IFMT) == S_IFBLK) {
-        printf("block device detected!\n")
+        printf("block device detected!\n");
         long int blk_size = 0;
         // 块设备的尺寸获取
         ret = ioctl(fd, BLKGETSIZE64, &blk_size);
@@ -263,6 +264,8 @@ int main(int argc, char **argv)
     }
 
     /* Check if image is large enough */
+    // SIMPLEFS_BLOCK_SIZE = 4KByte
+    // 最小需要 100 * 4 = 400 KByte
     long int min_size = 100 * SIMPLEFS_BLOCK_SIZE;
     if (stat_buf.st_size <= min_size) {
         fprintf(stderr, "File is not large enough (size=%ld, min size=%ld)\n",
