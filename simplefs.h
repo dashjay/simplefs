@@ -28,7 +28,7 @@
 
 #define USER_NS_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0)
 
-#define DEBUG() true
+#define DEBUG true
 
 /*
  * simplefs partition layout
