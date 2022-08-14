@@ -5,6 +5,7 @@
 #define SIMPLEFS_MAGIC 0xDEADCELL
 
 #define SIMPLEFS_SB_BLOCK_NR 0
+#define SIMPLEFS_DEBUG 0b1
 
 #define SIMPLEFS_BLOCK_SIZE (1 << 12) /* 4 KiB */
 #define SIMPLEFS_MAX_EXTENTS \
@@ -28,7 +29,6 @@
 
 #define USER_NS_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0)
 
-#define DEBUG 1
 
 /*
  * simplefs partition layout
