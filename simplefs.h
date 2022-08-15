@@ -4,6 +4,7 @@
 /* source: https://en.wikipedia.org/wiki/Hexspeak */
 #define SIMPLEFS_MAGIC 0xDEADCELL
 
+// 超级块储存在第一（0）块
 #define SIMPLEFS_SB_BLOCK_NR 0
 #define SIMPLEFS_DEBUG (1<<1)
 

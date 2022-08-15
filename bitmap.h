@@ -16,6 +16,8 @@ static inline uint32_t get_first_free_bits(unsigned long *freemap,
                                            uint32_t len)
 {
     uint32_t bit, prev = 0, count = 0;
+    // 从 0 到 size - 1 位置，遍历所有从头到 size 范围内的 bit
+    // addr 指向 bitmap
     for_each_set_bit (bit, freemap, size) {
         if (prev != bit - 1)
             count = 0;

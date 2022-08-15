@@ -169,6 +169,9 @@ static struct inode *simplefs_new_inode(struct inode *dir, mode_t mode)
     uint32_t ino, bno;
     int ret;
 
+    // 上一层里已经判断了 inode 里的文件数量没有超过最大限制
+    // 所以这里不需要再次判断了
+
     /* Check mode before doing anything to avoid undoing everything */
     if (!S_ISDIR(mode) && !S_ISREG(mode) && !S_ISLNK(mode)) {
         pr_err(
@@ -278,10 +281,15 @@ static int simplefs_create(struct inode *dir,
     int ei = 0, bi = 0, fi = 0;
 
     /* Check filename length */
+    if SIMPLEFS_DEBUG {
+        printk(KERN_INFO "check filename length: %ld", strlen(dentry->d_name.name));
+    }
     if (strlen(dentry->d_name.name) > SIMPLEFS_FILENAME_LEN)
         return -ENAMETOOLONG;
 
     /* Read parent directory index */
+    // 将 VFS 的 Inode 转化为 simplefs 的 Inode
+    // 并且把 VFS 的 Inode 赋给 simplefs_node 的 vfs 字段
     ci_dir = SIMPLEFS_INODE(dir);
     sb = dir->i_sb;
     bh = sb_bread(sb, ci_dir->ei_block);
@@ -290,12 +298,17 @@ static int simplefs_create(struct inode *dir,
 
     eblock = (struct simplefs_file_ei_block *) bh->b_data;
     /* Check if parent directory is full */
+
+    if SIMPLEFS_DEBUG {
+        printk(KERN_INFO "eblock.nr_files: %d\n", eblock->nr_files);
+    }
     if (eblock->nr_files == SIMPLEFS_MAX_SUBFILES) {
         ret = -EMLINK;
         goto end;
     }
 
     /* Get a new free inode */
+    // 创建一个新的 inode 在原来的目录上
     inode = simplefs_new_inode(dir, mode);
     if (IS_ERR(inode)) {
         ret = PTR_ERR(inode);
@@ -306,6 +319,7 @@ static int simplefs_create(struct inode *dir,
      * Scrub ei_block for new file/directory to avoid previous data
      * messing with new file/directory.
      */
+    // 把这个 inode 上对应的数据擦洗掉
     bh2 = sb_bread(sb, SIMPLEFS_INODE(inode)->ei_block);
     if (!bh2) {
         ret = -EIO;
@@ -316,12 +330,19 @@ static int simplefs_create(struct inode *dir,
     mark_buffer_dirty(bh2);
     brelse(bh2);
 
+    // create 的时候，这个父 inode 一定是 dir
+    // eblock 就是 d_inode->ei_block 对应的数据
+    // 里面有 nr_files 和 extents 列表
     /* Find first free slot in parent index and register new inode */
+    // ei 指向 extent 
     ei = eblock->nr_files / SIMPLEFS_FILES_PER_EXT;
+    // bi 指向 block_id
     bi = eblock->nr_files % SIMPLEFS_FILES_PER_EXT
          / SIMPLEFS_FILES_PER_BLOCK;
+    // fi 指向这个block 的 file_id
     fi = eblock->nr_files % SIMPLEFS_FILES_PER_BLOCK;
 
+    // 如果这是这个 extents 的第一个文件（文件夹）
     if (!eblock->extents[ei].ee_start) {
         bno = get_free_blocks(SIMPLEFS_SB(sb), 8);
         if (!bno) {
@@ -330,6 +351,9 @@ static int simplefs_create(struct inode *dir,
         }
         eblock->extents[ei].ee_start = bno;
         eblock->extents[ei].ee_len = 8;
+
+	// 如果 ei 是 0，那么就是 0
+	// 如果 ei 不是 0，那么就看上一个 extentd
         eblock->extents[ei].ee_block =
             ei ? eblock->extents[ei - 1].ee_block +
                      eblock->extents[ei - 1].ee_len

@@ -202,10 +202,13 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     sb->s_op = &simplefs_super_ops;
 
     /* Read sb from disk */
+    // bh 是 buffer_head 的意思，sb 里面有块设备的指针 b_dev
+    // 下方函数就是从块设备读取第一个 block 的意思
     bh = sb_bread(sb, SIMPLEFS_SB_BLOCK_NR);
     if (!bh)
         return -EIO;
 
+    // b_data pointer to data within the page
     csb = (struct simplefs_sb_info *) bh->b_data;
 
     /* Check magic number */
@@ -216,6 +219,9 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     }
 
     /* Alloc sb_info */
+    // GFP_KERNEL 表明在内核中分配空间，内存不够的时候，会等待内核释放内存
+    // 也就意味着会发生阻塞，如果是在中断处理（不可被中断），就需要使用 GFP_ATOMIC
+    // 用在不能拿睡眠的场合。
     sbi = kzalloc(sizeof(struct simplefs_sb_info), GFP_KERNEL);
     if (!sbi) {
         ret = -ENOMEM;
@@ -231,6 +237,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     sbi->nr_free_blocks = csb->nr_free_blocks;
     sb->s_fs_info = sbi;
 
+    // brelse 释放高速缓存
     brelse(bh);
 
     /* Alloc and copy ifree_bitmap */
