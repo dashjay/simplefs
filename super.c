@@ -195,7 +195,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     /* Init sb */
     sb->s_magic = SIMPLEFS_MAGIC;
     if SIMPLEFS_DEBUG {
-	printk(KERN_INFO "magic of simplefs: %lld\n", SIMPLEFS_MAGIC);
+        printk(KERN_INFO "magic of simplefs: %lld\n", SIMPLEFS_MAGIC);
     }
     sb_set_blocksize(sb, SIMPLEFS_BLOCK_SIZE);
     sb->s_maxbytes = SIMPLEFS_MAX_FILESIZE;

@@ -354,6 +354,7 @@ static int simplefs_create(struct inode *dir,
 
 	// 如果 ei 是 0，那么就是 0
 	// 如果 ei 不是 0，那么就看上一个 extentd
+	// 这里能并发么？
         eblock->extents[ei].ee_block =
             ei ? eblock->extents[ei - 1].ee_block +
                      eblock->extents[ei - 1].ee_len
