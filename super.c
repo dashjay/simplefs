@@ -195,7 +195,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     /* Init sb */
     sb->s_magic = SIMPLEFS_MAGIC;
     if SIMPLEFS_DEBUG {
-        printk(KERN_INFO "magic of simplefs: %lld\n", SIMPLEFS_MAGIC);
+        pr_info("magic of simplefs: %lld\n", SIMPLEFS_MAGIC);
     }
     sb_set_blocksize(sb, SIMPLEFS_BLOCK_SIZE);
     sb->s_maxbytes = SIMPLEFS_MAX_FILESIZE;
@@ -293,7 +293,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
         goto free_bfree;
     }
     if SIMPLEFS_DEBUG {
-        printk(KERN_INFO "root_inode->i_ino: %ld\n", root_inode->i_ino);
+        pr_info("root_inode->i_ino: %ld\n", root_inode->i_ino);
     }    
 #if USER_NS_REQUIRED()
     inode_init_owner(&init_user_ns, root_inode, NULL, root_inode->i_mode);
@@ -301,13 +301,14 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     inode_init_owner(root_inode, NULL, root_inode->i_mode);
 #endif
     
+    // d_make_root 把 0 号 inode 对应的 dentry 获取到，放在 s_root 这个字段里。
     sb->s_root = d_make_root(root_inode);
     if (!sb->s_root) {
         ret = -ENOMEM;
         goto iput;
     }
     if SIMPLEFS_DEBUG {
-        printk(KERN_INFO "sb->s_root(dentry)->d_name.name: %s\n", sb->s_root->d_name.name);
+        pr_info("sb->s_root(dentry)->d_name.name: %s\n", sb->s_root->d_name.name);
     }    
     return 0;
 

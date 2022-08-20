@@ -6,7 +6,8 @@
 
 // 超级块储存在第一（0）块
 #define SIMPLEFS_SB_BLOCK_NR 0
-#define SIMPLEFS_DEBUG (1<<1)
+#define SIMPLEFS_DEBUG (0)
+#define SIMPLEFS_DEBUG_INODE (1)
 
 #define SIMPLEFS_BLOCK_SIZE (1 << 12) /* 4 KiB */
 #define SIMPLEFS_MAX_EXTENTS \
@@ -129,6 +130,25 @@ extern uint32_t simplefs_ext_search(struct simplefs_file_ei_block *index,
 
 /* Getters for superbock and inode */
 #define SIMPLEFS_SB(sb) (sb->s_fs_info)
+
+
+/**
+ * container_of - cast a member of a structure out to the containing structure
+ * @ptr:	the pointer to the member.
+ * @type:	the type of the container struct this is embedded in.
+ * @member:	the name of the member within the struct.
+ *
+
+https://github1s.com/torvalds/linux/blob/v5.10/include/linux/kernel.h#L844-L857
+
+#define container_of(ptr, type, member) ({				\
+	void *__mptr = (void *)(ptr);					\
+	BUILD_BUG_ON_MSG(!__same_type(*(ptr), ((type *)0)->member) &&	\
+			 !__same_type(*(ptr), void),			\
+			 "pointer type mismatch in container_of()");	\
+	((type *)(__mptr - offsetof(type, member))); })
+ */
+
 #define SIMPLEFS_INODE(inode) \
     (container_of(inode, struct simplefs_inode_info, vfs_inode))
 

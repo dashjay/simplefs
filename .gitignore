@@ -57,5 +57,5 @@ dkms.conf
 # Other
 test.img
 test.sh
-
+test
 .vscode*

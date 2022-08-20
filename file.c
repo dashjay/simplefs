@@ -210,10 +210,54 @@ const struct address_space_operations simplefs_aops = {
     .write_end = simplefs_write_end,
 };
 
+/**
+ * generic_file_llseek - generic llseek implementation for regular files
+ * @file:	file structure to seek on
+ * @offset:	file offset to seek to
+ * @whence:	type of seek
+ *
+ * This is a generic implemenation of ->llseek useable for all normal local
+ * filesystems.  It just updates the file offset to the value specified by
+ * @offset and @whence.
+ */
+// wrap 函数 generic_file_llseek 为了查看调用的参数
+loff_t simplefs_file_llseek(struct file *file, loff_t offset, int whence){
+    pr_info("call generic_file_llseek with file_pos %lld, offset: %lld, whence: %d", file->f_pos, offset, whence);
+    return generic_file_llseek(file, offset, whence);
+}
+
+
+/**
+ * generic_file_read_iter - generic filesystem read routine
+ * @iocb:	kernel I/O control block
+ * @iter:	destination for the data read
+ *
+ * This is the "read_iter()" routine for all filesystems
+ * that can use the page cache directly.
+ *
+ * The IOCB_NOWAIT flag in iocb->ki_flags indicates that -EAGAIN shall
+ * be returned when no data can be read without waiting for I/O requests
+ * to complete; it doesn't prevent readahead.
+ *
+ * The IOCB_NOIO flag in iocb->ki_flags indicates that no new I/O
+ * requests shall be made for the read or for readahead.  When no data
+ * can be read, -EAGAIN shall be returned.  When readahead would be
+ * triggered, a partial, possibly empty read shall be returned.
+ *
+ * Return:
+ * * number of bytes copied, even for partial reads
+ * * negative error code (or 0 if IOCB_NOIO) if nothing was read
+ */
+ssize_t simplefs_file_read_iter(struct kiocb *iocb, struct iov_iter *iter){
+    pr_info("call generic_file_read_iter");
+    return generic_file_read_iter(iocb, iter);
+}
+// 对于普通的文件，有如下的操作类型
 const struct file_operations simplefs_file_ops = {
-    .llseek = generic_file_llseek,
+    .llseek = simplefs_file_llseek,
     .owner = THIS_MODULE,
-    .read_iter = generic_file_read_iter,
+    .read_iter = simplefs_file_read_iter,
     .write_iter = generic_file_write_iter,
     .fsync = generic_file_fsync,
 };
+

@@ -14,6 +14,9 @@ static const struct inode_operations symlink_inode_ops;
 /* Get inode ino from disk */
 struct inode *simplefs_iget(struct super_block *sb, unsigned long ino)
 {
+    if SIMPLEFS_DEBUG_INODE {
+        pr_info("inode.c: call simplefs_iget(%ld)", ino);
+    }
     struct inode *inode = NULL;
     struct simplefs_inode *cinode = NULL;
     struct simplefs_inode_info *ci = NULL;
@@ -28,14 +31,19 @@ struct inode *simplefs_iget(struct super_block *sb, unsigned long ino)
         return ERR_PTR(-EINVAL);
 
     /* Get a locked inode from Linux */
+    // iget_locked - obtain an inode from a mounted file system
     inode = iget_locked(sb, ino);
     if (!inode)
         return ERR_PTR(-ENOMEM);
 
     /* If inode is in cache, return it */
+    // If the inode is not in cache, allocate a new inode and return it locked, hashed, and with the I_NEW flag set.
+    // 如果 inode 不在 cache 里，上方的函数会分配一个新的 inode ……并且带有 I_NEW flag……
     if (!(inode->i_state & I_NEW))
         return inode;
 
+    // ci 应该是 container_of inode 的意思
+    // 把 VFS 的 Inode 放进 simeplfs_inode_info 结构里面的 vfs_inode 字段里
     ci = SIMPLEFS_INODE(inode);
     /* Read inode from disk and initialize */
     bh = sb_bread(sb, inode_block);
@@ -43,13 +51,17 @@ struct inode *simplefs_iget(struct super_block *sb, unsigned long ino)
         ret = -EIO;
         goto failed;
     }
+    // cinode 指向所在的 block 的第一个 simplefs_inode 结构
     cinode = (struct simplefs_inode *) bh->b_data;
+    // cinode 指向对应正确的 block
     cinode += inode_shift;
 
     inode->i_ino = ino;
     inode->i_sb = sb;
     inode->i_op = &simplefs_inode_ops;
 
+    // 把磁盘里存的 simplefs inode 里的信息全部都拷贝出来
+    // 放进 VFS 的 inode 里。
     inode->i_mode = le32_to_cpu(cinode->i_mode);
     i_uid_write(inode, le32_to_cpu(cinode->i_uid));
     i_gid_write(inode, le32_to_cpu(cinode->i_gid));
@@ -63,14 +75,16 @@ struct inode *simplefs_iget(struct super_block *sb, unsigned long ino)
     inode->i_blocks = le32_to_cpu(cinode->i_blocks);
     set_nlink(inode, le32_to_cpu(cinode->i_nlink));
 
+    // 检查 inode 的 i_mode 情况
+    // 如果是一个目录
     if (S_ISDIR(inode->i_mode)) {
         ci->ei_block = le32_to_cpu(cinode->ei_block);
         inode->i_fop = &simplefs_dir_ops;
-    } else if (S_ISREG(inode->i_mode)) {
+    } else if (S_ISREG(inode->i_mode)) { // 如果是一个普通的文件
         ci->ei_block = le32_to_cpu(cinode->ei_block);
         inode->i_fop = &simplefs_file_ops;
         inode->i_mapping->a_ops = &simplefs_aops;
-    } else if (S_ISLNK(inode->i_mode)) {
+    } else if (S_ISLNK(inode->i_mode)) { // 如果是一个 link
         strncpy(ci->i_data, cinode->i_data, sizeof(ci->i_data));
         inode->i_link = ci->i_data;
         inode->i_op = &symlink_inode_ops;
@@ -282,7 +296,7 @@ static int simplefs_create(struct inode *dir,
 
     /* Check filename length */
     if SIMPLEFS_DEBUG {
-        printk(KERN_INFO "check filename length: %ld", strlen(dentry->d_name.name));
+        pr_info("check filename length: %ld", strlen(dentry->d_name.name));
     }
     if (strlen(dentry->d_name.name) > SIMPLEFS_FILENAME_LEN)
         return -ENAMETOOLONG;
@@ -300,7 +314,7 @@ static int simplefs_create(struct inode *dir,
     /* Check if parent directory is full */
 
     if SIMPLEFS_DEBUG {
-        printk(KERN_INFO "eblock.nr_files: %d\n", eblock->nr_files);
+        pr_info("eblock.nr_files: %d\n", eblock->nr_files);
     }
     if (eblock->nr_files == SIMPLEFS_MAX_SUBFILES) {
         ret = -EMLINK;
@@ -785,7 +799,6 @@ static int simplefs_link(struct dentry *old_dentry,
 
     if (eblock->nr_files == SIMPLEFS_MAX_SUBFILES) {
         ret = -EMLINK;
-        printk(KERN_INFO "directory is full");
         goto end;
     }
 
@@ -874,7 +887,6 @@ static int simplefs_symlink(struct inode *dir,
 
     if (eblock->nr_files == SIMPLEFS_MAX_SUBFILES) {
         ret = -EMLINK;
-        printk(KERN_INFO "directory is full");
         goto end;
     }
 
