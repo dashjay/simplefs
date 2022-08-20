@@ -292,6 +292,9 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
         ret = PTR_ERR(root_inode);
         goto free_bfree;
     }
+    if SIMPLEFS_DEBUG {
+        printk(KERN_INFO "root_inode->i_ino: %ld\n", root_inode->i_ino);
+    }    
 #if USER_NS_REQUIRED()
     inode_init_owner(&init_user_ns, root_inode, NULL, root_inode->i_mode);
 #else
@@ -303,7 +306,9 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
         ret = -ENOMEM;
         goto iput;
     }
-
+    if SIMPLEFS_DEBUG {
+        printk(KERN_INFO "sb->s_root(dentry)->d_name.name: %s\n", sb->s_root->d_name.name);
+    }    
     return 0;
 
 iput:
