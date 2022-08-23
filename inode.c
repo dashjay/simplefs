@@ -113,6 +113,8 @@ static struct dentry *simplefs_lookup(struct inode *dir,
                                       unsigned int flags)
 {
     struct super_block *sb = dir->i_sb;
+
+    // dir 是表示 dir 的 inode 
     struct simplefs_inode_info *ci_dir = SIMPLEFS_INODE(dir);
     struct inode *inode = NULL;
     struct buffer_head *bh = NULL, *bh2 = NULL;
@@ -133,10 +135,14 @@ static struct dentry *simplefs_lookup(struct inode *dir,
 
     /* Search for the file in directory */
     for (ei = 0; ei < SIMPLEFS_MAX_EXTENTS; ei++) {
+        // ee_start 就是 block number
+        // 如果为零就说明没有下一个 extents 了
         if (!eblock->extents[ei].ee_start)
             break;
 
         /* Iterate blocks in extent */
+        // 每个 extent 里面的 ee_len 就是，block 的数量
+        // 然后从 ee_start 开始有 ee_len 个 block
         for (bi = 0; bi < eblock->extents[ei].ee_len; bi++) {
             bh2 = sb_bread(sb, eblock->extents[ei].ee_start + bi);
             if (!bh2)
